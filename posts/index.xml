@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Bad with names</title>
+    <link>https://ananduee.github.io/posts/</link>
+    <description>Recent content in Posts on Bad with names</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 27 Oct 2019 14:09:18 +0530</lastBuildDate>
+    
+	<atom:link href="https://ananduee.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Lock Free Linked List</title>
+      <link>https://ananduee.github.io/posts/lock-free-linked-list/</link>
+      <pubDate>Sun, 27 Oct 2019 14:09:18 +0530</pubDate>
+      
+      <guid>https://ananduee.github.io/posts/lock-free-linked-list/</guid>
+      <description>This is my first blog post. Through this blog I want to learn and explore different paradigms of programming and software development. So this blog will mostly be in format of notes of things which I have read and some of my thoughts around them. I will try to ensure that I always metion links which I have used to research on the topic.
+On of my personal favuorite paradigms in programming is asynchronous programming so wanted to start with a very basic lock free data structure &amp;ldquo;Lock free linked list&amp;rdquo;.</description>
+    </item>
+    
+  </channel>
+</rss>
