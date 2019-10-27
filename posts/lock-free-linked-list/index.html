@@ -36,11 +36,11 @@
 
 <p>Let&rsquo;s say we have some data which others can be read as well as change. Depending on the methods we provide to change the data we might leave data in in-consistent state. for example :-</p>
 
-<p>Let&rsquo;s say we have a variable <code>int value = 0</code> and we provide a method to increment this value. Here is how basic implementation of &ldquo;increment&rdquo; method would look :-</p>
+<p>Let&rsquo;s say we have a variable <code>int value = 0</code> and we provide a method to increment this value. Here is how code of &ldquo;increment&rdquo; method would look :-</p>
 <div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">void</span> <span style="color:#000">increment</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
     <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">+</span> <span style="color:#000">1</span><span style="color:#000;font-weight:bold">;</span>
 <span style="color:#000;font-weight:bold">}</span></code></pre></div>
-<p>Till time this method gets called from one thread everything will work fine. Now lets say multiple threads start calling this method increment in parallel. Here is java code to do so :-</p>
+<p>Till time we call this method from one thread or one by one everything will be fine. Now lets say multiple threads start calling this method parallely. Here is java code for the same here we are calling &ldquo;increment&rdquo; method 10000 times. We are only using 2 threads so roughly each thread will call increment 5000 times.</p>
 <div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">CompletableFuture</span><span style="color:#000;font-weight:bold">;</span>
 <span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">ExecutorService</span><span style="color:#000;font-weight:bold">;</span>
 <span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">Executors</span><span style="color:#000;font-weight:bold">;</span>
@@ -70,7 +70,7 @@
         <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">;</span>
     <span style="color:#000;font-weight:bold">}</span>
 <span style="color:#000;font-weight:bold">}</span></code></pre></div>
-<p>We would expect this programm to print &ldquo;10000&rdquo;, However here is output of this programme on my laptop :-</p>
+<p>On running this code e would expect this programm to print &ldquo;10000&rdquo;, However here is output of this programme on my laptop :-</p>
 
 <ol>
 <li>Run number 1 - 9994</li>
@@ -87,28 +87,35 @@
 <li>Set this value to existing variable.</li>
 </ol>
 
-<p>If multiple threads are performing this action in parallel it might happen that a thread 1 (T1) has read the value and wants to increase it now another thread T2 reads this value before T1 fnishes setting the value in such cases value won&rsquo;t be incremneted in T2 as it has previous value.</p>
+<p>If multiple threads are performing this action in parallel it might happen that a thread 1 (T1) has read the value and wants to increase it now another thread T2 reads this value before T1 fnishes setting the value in such cases value won&rsquo;t be increased in T2 as it has previous value.</p>
 
 <p>Traditional way to solve this problem is by using locks. In java we can just make the method &ldquo;increment&rdquo; <a href="https://docs.oracle.com/javase/tutorial/essential/concurrency/locksync.html">synchronized</a>. This will ensure this method can only be called by one thread at a time. If multiple threads want to invoke this method they will automatically wait for this method to finish for active thread.</p>
 
-<p>However locks/synchronization have a cost. In the above example second thread will always have to wait for first thread to finish this effectively means that their is not advantage of using multiple threads.</p>
+<p>However locks/synchronization have a cost. In the above example second thread will always have to wait for first thread to finish, this effectively means that their is no advantage of using multiple threads as at all times their is only 1 method doing the work.</p>
 
 <p>So general idea of lock free programming is - Minimize usage of locks by using <a href="https://en.wikipedia.org/wiki/Optimistic_concurrency_control">optimistic design</a>, <a href="https://en.wikipedia.org/wiki/Compare-and-swap">CAS</a> etc. We can never eliminate locks fully as lock free programming poses certain limitations on how a programme can be written.</p>
 
 <h3 id="compare-and-swap-cas">Compare and swap (CAS)</h3>
 
-<p>As per wikipedia &ldquo;CAS compares the contents of a memory location with a given value and, only if they are the same, modifies the contents of that memory location to a new given value.&rdquo;. Most of modern CPU&rsquo;s support this operation by default i.e. In 1 operation you can compare value in a memory location and if found equal change it to a new value.</p>
+<p>As per wikipedia &ldquo;CAS compares the contents of a memory location with a given input value and if input value is same as current value it modifies the contents of that memory location to a new given value.&rdquo;. So CAS can be imagined as function taking 3 arguments.</p>
+
+<ol>
+<li>memory location</li>
+<li>expected value at the memory location</li>
+<li>new value to set at memory location</li>
+</ol>
+
+<p>Most of modern CPU&rsquo;s support this operation by default i.e. In 1 operation you can compare value in a memory location and if found equal change it to a new value.</p>
 
 <p>Java provides this through &ldquo;AtomicInteger&rdquo;, &ldquo;AtomicBoolean&rdquo;, &ldquo;AtomicLong&rdquo; etc classes. If you look at &ldquo;compareAndSet&rdquo; method inside &ldquo;AtomicInteger&rdquo; it is calling &ldquo;Unsafe&rdquo; class of java to hardware specific operation.</p>
 
-<p>Here is how are programme would look with compare and swap operation</p>
+<p>Here is how out programme would look with compare and swap operation</p>
 <div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">CompletableFuture</span><span style="color:#000;font-weight:bold">;</span>
 <span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">ExecutorService</span><span style="color:#000;font-weight:bold">;</span>
 <span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">Executors</span><span style="color:#000;font-weight:bold">;</span>
 <span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">atomic</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">AtomicInteger</span><span style="color:#000;font-weight:bold">;</span>
 
-<span style="color:#8f5902;font-style:italic">/* Name of the class has to be &#34;Main&#34; only if the class is public. */</span>
-<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">Ideone</span>
+<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">CASTesting</span>
 <span style="color:#000;font-weight:bold">{</span>
     <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">static</span> <span style="color:#000">AtomicInteger</span> <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">AtomicInteger</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">0</span><span style="color:#000;font-weight:bold">);</span>
 
@@ -133,9 +140,11 @@
         <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#000">currentValue</span><span style="color:#000;font-weight:bold">;</span>
     <span style="color:#000;font-weight:bold">}</span>
 <span style="color:#000;font-weight:bold">}</span></code></pre></div>
-<p>The only thing which has changed here is that we used &ldquo;AtomicIntger&rdquo; instead of primitive &ldquo;int&rdquo; which provides us atomic compare and set operation. We then assign value on which we want to increment in a seperate variable and loop till our desired value is set.</p>
+<p>No matter how many threads we use here we will always get 10,000 which is our desired value.</p>
 
-<p>Good thing here is that none of the threads will be blocked so their is no deadlock scenario to worry about.</p>
+<p>The only thing which has changed here is that we used &ldquo;AtomicIntger&rdquo; instead of primitive &ldquo;int&rdquo;.  AtomicIntger provides us atomic compare and set operation. We then assign value on which we want to increment in a seperate variable and loop till our desired value is set.</p>
+
+<p>Good thing here is that none of the threads will be blocked so their is no deadlock scenario to worry about. (Deadlock is a scenario when one therad is waiting for another therad to release a lock and that lock is never released or original thread dies while lock is still acquired and does not release the lock before dying.)</p>
 
 <h3 id="linked-list">Linked list</h3>
 
