@@ -1,61 +1,32 @@
 <!DOCTYPE html>
 <html lang="en-us">
-	<head>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		
-		
-		
-		<meta name="generator" content="Hugo 0.58.3" />
-		<title>Lock Free Linked List &middot; Bad with names</title>
-		<link rel="shortcut icon" href="https://ananduee.github.io/images/favicon.ico">
-		<link rel="stylesheet" href="https://ananduee.github.io/css/style.css">
-		<link rel="stylesheet" href="https://ananduee.github.io/css/highlight.css">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lock Free Linked List | Bad with names</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
 
-		
-		<link rel="stylesheet" href="https://ananduee.github.io/css/monosocialiconsfont.css">
-		
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
 
-		
+<div class="article-meta">
+<h1><span class="title">Lock Free Linked List</span></h1>
 
-		
-	</head>
+<h2 class="date">2019/10/27</h2>
+</div>
 
-    <body>
-       <nav class="main-nav">
-	
-	
-		<a href='https://ananduee.github.io/'> <span class="arrow">←</span>Home</a>
-	
-	<a href='https://ananduee.github.io/posts'>Archive</a>
-	<a href='https://ananduee.github.io/tags'>Tags</a>
-	<a href='https://ananduee.github.io/about'>About</a>
+<main>
 
-	
-
-	
-</nav>
-
-
-        <section id="wrapper" class="post">
-            <article>
-                <header>
-                    <h1>
-                        Lock Free Linked List
-                    </h1>
-                    <h2 class="headline">
-                    Oct 27, 2019 14:09
-                    · 2101 words
-                    · 10 minute read
-                      <span class="tags">
-                      
-                      </span>
-                    </h2>
-                </header>
-                
-                <section id="post-body">
-                    
 
 <p>This is my first blog post. Through this blog I want to learn and explore different paradigms of programming and software development. So this blog will mostly be in format of notes of things which I have read and some of my thoughts around them. I will try to ensure that I always metion links which I have used to research on the topic.</p>
 
@@ -66,45 +37,39 @@
 <p>Let&rsquo;s say we have some data which others can be read as well as change. Depending on the methods we provide to change the data we might leave data in in-consistent state. for example :-</p>
 
 <p>Let&rsquo;s say we have a variable <code>int value = 0</code> and we provide a method to increment this value. Here is how basic implementation of &ldquo;increment&rdquo; method would look :-</p>
-
-<pre><code class="language-java">void increment() {
-    value = value + 1;
-}
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">void</span> <span style="color:#000">increment</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">+</span> <span style="color:#000">1</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <p>Till time this method gets called from one thread everything will work fine. Now lets say multiple threads start calling this method increment in parallel. Here is java code to do so :-</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">CompletableFuture</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">ExecutorService</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">Executors</span><span style="color:#000;font-weight:bold">;</span>
 
-<pre><code class="language-java">import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">IncrementTesting</span>
+<span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">static</span> <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">0</span><span style="color:#000;font-weight:bold">;</span>
 
-class IncrementTesting
-{
-    public static int value = 0;
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">static</span> <span style="color:#204a87;font-weight:bold">void</span> <span style="color:#000">main</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">String</span><span style="color:#000;font-weight:bold">[]</span> <span style="color:#000">args</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#204a87;font-weight:bold">throws</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">lang</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">Exception</span>
+    <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">int</span> <span style="color:#000">loopSize</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">10000</span><span style="color:#000;font-weight:bold">;</span> <span style="color:#8f5902;font-style:italic">// You can change loop size to experiment.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#8f5902;font-style:italic">// Ensure you use more than 1 thread.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">ExecutorService</span> <span style="color:#000">executor</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">Executors</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">newFixedThreadPool</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">2</span><span style="color:#000;font-weight:bold">);</span> 
+        <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">CompletableFuture</span><span style="color:#ce5c00;font-weight:bold">&lt;</span><span style="color:#000">Integer</span><span style="color:#ce5c00;font-weight:bold">&gt;</span><span style="color:#000;font-weight:bold">[]</span> <span style="color:#000">workerTasks</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">CompletableFuture</span><span style="color:#000;font-weight:bold">[</span><span style="color:#000">loopSize</span><span style="color:#000;font-weight:bold">];</span>
+        <span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">i</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">0</span><span style="color:#000;font-weight:bold">;</span> <span style="color:#000">i</span> <span style="color:#ce5c00;font-weight:bold">&lt;</span> <span style="color:#000">loopSize</span><span style="color:#000;font-weight:bold">;</span> <span style="color:#ce5c00;font-weight:bold">++</span><span style="color:#000">i</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#8f5902;font-style:italic">// Start work asynchronously.
+</span><span style="color:#8f5902;font-style:italic"></span>            <span style="color:#000">workerTasks</span><span style="color:#000;font-weight:bold">[</span><span style="color:#000">i</span><span style="color:#000;font-weight:bold">]</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">CompletableFuture</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">supplyAsync</span><span style="color:#000;font-weight:bold">(()</span> <span style="color:#ce5c00;font-weight:bold">-&gt;</span> <span style="color:#000">increment</span><span style="color:#000;font-weight:bold">(),</span> <span style="color:#000">executor</span><span style="color:#000;font-weight:bold">);</span> 
+        <span style="color:#000;font-weight:bold">}</span>
+        <span style="color:#8f5902;font-style:italic">// Wait for all async tasks to finish.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#000">CompletableFuture</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">allOf</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">workerTasks</span><span style="color:#000;font-weight:bold">).</span><span style="color:#c4a000">join</span><span style="color:#000;font-weight:bold">();</span>
+        <span style="color:#000">System</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">out</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">println</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">value</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#000">executor</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">shutdown</span><span style="color:#000;font-weight:bold">();</span>
+    <span style="color:#000;font-weight:bold">}</span>
 
-    public static void main (String[] args) throws java.lang.Exception
-    {
-        final int loopSize = 10000; // You can change loop size to experiment.
-        // Ensure you use more than 1 thread.
-        final ExecutorService executor = Executors.newFixedThreadPool(2); 
-        final CompletableFuture&lt;Integer&gt;[] workerTasks = new CompletableFuture[loopSize];
-        for (int i = 0; i &lt; loopSize; ++i) {
-            // Start work asynchronously.
-            workerTasks[i] = CompletableFuture.supplyAsync(() -&gt; increment(), executor); 
-        }
-        // Wait for all async tasks to finish.
-        CompletableFuture.allOf(workerTasks).join();
-        System.out.println(value);
-        executor.shutdown();
-    }
-
-    private static int increment() {
-        value = value + 1;
-        return value;
-    }
-}
-</code></pre>
-
+    <span style="color:#204a87;font-weight:bold">private</span> <span style="color:#000">static</span> <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">increment</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">+</span> <span style="color:#000">1</span><span style="color:#000;font-weight:bold">;</span>
+        <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <p>We would expect this programm to print &ldquo;10000&rdquo;, However here is output of this programme on my laptop :-</p>
 
 <ol>
@@ -137,40 +102,37 @@ class IncrementTesting
 <p>Java provides this through &ldquo;AtomicInteger&rdquo;, &ldquo;AtomicBoolean&rdquo;, &ldquo;AtomicLong&rdquo; etc classes. If you look at &ldquo;compareAndSet&rdquo; method inside &ldquo;AtomicInteger&rdquo; it is calling &ldquo;Unsafe&rdquo; class of java to hardware specific operation.</p>
 
 <p>Here is how are programme would look with compare and swap operation</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">CompletableFuture</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">ExecutorService</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">Executors</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">atomic</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">AtomicInteger</span><span style="color:#000;font-weight:bold">;</span>
 
-<pre><code class="language-java">import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+<span style="color:#8f5902;font-style:italic">/* Name of the class has to be &#34;Main&#34; only if the class is public. */</span>
+<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">Ideone</span>
+<span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">static</span> <span style="color:#000">AtomicInteger</span> <span style="color:#000">value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">AtomicInteger</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">0</span><span style="color:#000;font-weight:bold">);</span>
 
-/* Name of the class has to be &quot;Main&quot; only if the class is public. */
-class Ideone
-{
-    public static AtomicInteger value = new AtomicInteger(0);
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">static</span> <span style="color:#204a87;font-weight:bold">void</span> <span style="color:#000">main</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">String</span><span style="color:#000;font-weight:bold">[]</span> <span style="color:#000">args</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#204a87;font-weight:bold">throws</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">lang</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">Exception</span>
+    <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">int</span> <span style="color:#000">loopSize</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">10000</span><span style="color:#000;font-weight:bold">;</span> <span style="color:#8f5902;font-style:italic">// You can change loop size to experiment.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">ExecutorService</span> <span style="color:#000">executor</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">Executors</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">newFixedThreadPool</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">10</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">CompletableFuture</span><span style="color:#ce5c00;font-weight:bold">&lt;</span><span style="color:#000">Integer</span><span style="color:#ce5c00;font-weight:bold">&gt;</span><span style="color:#000;font-weight:bold">[]</span> <span style="color:#000">workerTasks</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">CompletableFuture</span><span style="color:#000;font-weight:bold">[</span><span style="color:#000">loopSize</span><span style="color:#000;font-weight:bold">];</span>
+        <span style="color:#204a87;font-weight:bold">for</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">i</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">0</span><span style="color:#000;font-weight:bold">;</span> <span style="color:#000">i</span> <span style="color:#ce5c00;font-weight:bold">&lt;</span> <span style="color:#000">loopSize</span><span style="color:#000;font-weight:bold">;</span> <span style="color:#ce5c00;font-weight:bold">++</span><span style="color:#000">i</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#000">workerTasks</span><span style="color:#000;font-weight:bold">[</span><span style="color:#000">i</span><span style="color:#000;font-weight:bold">]</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">CompletableFuture</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">supplyAsync</span><span style="color:#000;font-weight:bold">(()</span> <span style="color:#ce5c00;font-weight:bold">-&gt;</span> <span style="color:#000">increment</span><span style="color:#000;font-weight:bold">(),</span> <span style="color:#000">executor</span><span style="color:#000;font-weight:bold">);</span> <span style="color:#8f5902;font-style:italic">// Start work asynchronously.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#000;font-weight:bold">}</span>
+        <span style="color:#000">CompletableFuture</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">allOf</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">workerTasks</span><span style="color:#000;font-weight:bold">).</span><span style="color:#c4a000">join</span><span style="color:#000;font-weight:bold">();</span> <span style="color:#8f5902;font-style:italic">// Wait for all async tasks to finish.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#000">System</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">out</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">println</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">value</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#000">executor</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">shutdown</span><span style="color:#000;font-weight:bold">();</span>
+    <span style="color:#000;font-weight:bold">}</span>
 
-    public static void main (String[] args) throws java.lang.Exception
-    {
-        final int loopSize = 10000; // You can change loop size to experiment.
-        final ExecutorService executor = Executors.newFixedThreadPool(10);
-        final CompletableFuture&lt;Integer&gt;[] workerTasks = new CompletableFuture[loopSize];
-        for (int i = 0; i &lt; loopSize; ++i) {
-            workerTasks[i] = CompletableFuture.supplyAsync(() -&gt; increment(), executor); // Start work asynchronously.
-        }
-        CompletableFuture.allOf(workerTasks).join(); // Wait for all async tasks to finish.
-        System.out.println(value);
-        executor.shutdown();
-    }
-
-    private static int increment() {
-        int currentValue = value.intValue();
-        while (!value.compareAndSet(currentValue, currentValue + 1)) {
-            currentValue = value.intValue();
-        }
-        return currentValue;
-    }
-}
-</code></pre>
-
+    <span style="color:#204a87;font-weight:bold">private</span> <span style="color:#000">static</span> <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">increment</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">currentValue</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">intValue</span><span style="color:#000;font-weight:bold">();</span>
+        <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">!</span><span style="color:#000">value</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">compareAndSet</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">currentValue</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">currentValue</span> <span style="color:#ce5c00;font-weight:bold">+</span> <span style="color:#000">1</span><span style="color:#000;font-weight:bold">))</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#000">currentValue</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">intValue</span><span style="color:#000;font-weight:bold">();</span>
+        <span style="color:#000;font-weight:bold">}</span>
+        <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#000">currentValue</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <p>The only thing which has changed here is that we used &ldquo;AtomicIntger&rdquo; instead of primitive &ldquo;int&rdquo; which provides us atomic compare and set operation. We then assign value on which we want to increment in a seperate variable and loop till our desired value is set.</p>
 
 <p>Good thing here is that none of the threads will be blocked so their is no deadlock scenario to worry about.</p>
@@ -178,25 +140,18 @@ class Ideone
 <h3 id="linked-list">Linked list</h3>
 
 <p>To allow arbitary insertion we will implement a sorted linked list this implemention can be easily modifed to create a normal linked list/stack/queue. Let&rsquo;s assume following structure of Node in the linked list :-</p>
-
-<pre><code class="language-java">class Node {
-    int value;
-    Node next;
-}
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">Node</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#000">Node</span> <span style="color:#000">next</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <p>Let&rsquo;s consider an ordered linked list :-</p>
-
-<pre><code class="language-no-highlight">+----------+    +-------+    +-------+   +-------+    +--------+
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-no-highlight" data-lang="no-highlight">+----------+    +-------+    +-------+   +-------+    +--------+
 |   head   ------   1   ------  3    -----   7   ------  tail  |
-+----------+    +-------+    +-------+   +-------+    +--------+                                                           
-</code></pre>
-
++----------+    +-------+    +-------+   +-------+    +--------+                                                           </code></pre></div>
 <p>In such a list insertion requires finding postion of the node i.e node after which this node should be inserted. Let&rsquo;s say we want to insert 5 in this list. It will require two operations making 7 as next node of 5 and then changing next node of 3 to 5.</p>
 
 <p>Operation 1 :-</p>
-
-<pre><code class="language-no-highlight">+----------+    +-------+    +-------+           +-------+      +--------+
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-no-highlight" data-lang="no-highlight">+----------+    +-------+    +-------+           +-------+      +--------+
 |   head   ------   1   ------  3    -------------   7   --------   tail |
 +----------+    +-------+    +-------+          /+-------+      +--------+
                                                /                          
@@ -205,16 +160,11 @@ class Ideone
                                             /                             
                                   +-------+/                              
                                   |   5   /                               
-                                  +-------+                                 
-</code></pre>
-
+                                  +-------+                                 </code></pre></div>
 <p>Operation 2 :-</p>
-
-<pre><code class="language-no-highlight">+----------+    +-------+    +-------+ +-------+   +-------+    +--------+
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-no-highlight" data-lang="no-highlight">+----------+    +-------+    +-------+ +-------+   +-------+    +--------+
 |   head   ------   1   ------  3    ---  5    ----- 7     ------   tail |
-+----------+    +-------+    +-------+ +-------+   +-------+    +--------+
-</code></pre>
-
++----------+    +-------+    +-------+ +-------+   +-------+    +--------+</code></pre></div>
 <p>Operation 1 is safe and simple and can be done directly. for Operation 2 we will need to use Compare and swap to change next of 3. CAS will ensure that swap only suceeds if next node of 3 is still 5 in case another insertion has happened i.e 6 has been inserted in parallel during next CAS attempt we will mark 6 as next node 5. This will keep on going till CAS is not successful.</p>
 
 <p>Similarly if we think of delete operation i.e we need to delete &ldquo;5&rdquo; then we need to find node before the node to delete which would be &ldquo;3&rdquo; and change the value of next to &ldquo;7&rdquo;. We will need to ensure CAS for this operation too. Here CAS will ensure that next node of &ldquo;3&rdquo; remains &ldquo;5&rdquo; before we commit. Let&rsquo;s say while this deletion was happening their is another parallel insert between &ldquo;5&rdquo; and &ldquo;7&rdquo;. In this case a single CAS while deletion will not be enough as it will be succesfull. So single CAS can not detect that a parallel insertion and deletion operation is happening at a node.</p>
@@ -222,186 +172,183 @@ class Ideone
 <p>Algorithm proposeed in Tim harris paper handles this case using two CAS operaations first one to mark node which will be deleted and second CAS operation to actually change the next node. After first operation node is said to be logically deleted and after second operation node is said to be physically deleted.</p>
 
 <p>Following is code for this.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#204a87;font-weight:bold">import</span> <span style="color:#000">java</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">util</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">concurrent</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">atomic</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">AtomicMarkableReference</span><span style="color:#000;font-weight:bold">;</span>
 
-<pre><code class="language-java">import java.util.concurrent.atomic.AtomicMarkableReference;
+<span style="color:#8f5902;font-style:italic">/**
+</span><span style="color:#8f5902;font-style:italic"> * Node represents single item in linked list. Here next pointer is atomic markable reference so that it can hold
+</span><span style="color:#8f5902;font-style:italic"> * additional boolean value if a node is logically deleted.
+</span><span style="color:#8f5902;font-style:italic"> *
+</span><span style="color:#8f5902;font-style:italic"> * one thing to note here is if next pointer is marked to true then it means current Node has been logically deleted.
+</span><span style="color:#8f5902;font-style:italic"> */</span>
+<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">Node</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#000">AtomicMarkableReference</span><span style="color:#ce5c00;font-weight:bold">&lt;</span><span style="color:#000">Node</span><span style="color:#ce5c00;font-weight:bold">&gt;</span> <span style="color:#000">next</span><span style="color:#000;font-weight:bold">;</span>
 
-/**
- * Node represents single item in linked list. Here next pointer is atomic markable reference so that it can hold
- * additional boolean value if a node is logically deleted.
- *
- * one thing to note here is if next pointer is marked to true then it means current Node has been logically deleted.
- */
-class Node {
-    int value;
-    AtomicMarkableReference&lt;Node&gt; next;
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">Node</span><span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">this</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">value</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">;</span>
+        <span style="color:#204a87;font-weight:bold">this</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">AtomicMarkableReference</span><span style="color:#ce5c00;font-weight:bold">&lt;&gt;</span><span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">null</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">);</span>
+    <span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000;font-weight:bold">}</span>
 
-    public Node(int value) {
-        this.value = value;
-        this.next = new AtomicMarkableReference&lt;&gt;(null, false);
-    }
-}
+<span style="color:#8f5902;font-style:italic">/**
+</span><span style="color:#8f5902;font-style:italic"> * utility object used for performing search operation on the list. This object will not be exposed outside this class.
+</span><span style="color:#8f5902;font-style:italic"> * for a given search operation following would be values of 2 fields of this object :-
+</span><span style="color:#8f5902;font-style:italic"> * 1. curr - first node with equal or greater value than search keyword.
+</span><span style="color:#8f5902;font-style:italic"> * 2. pred - previous node of curr.
+</span><span style="color:#8f5902;font-style:italic"> */</span>
+<span style="color:#204a87;font-weight:bold">class</span> <span style="color:#000">Window</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">Node</span> <span style="color:#000">pred</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">Node</span> <span style="color:#000">curr</span><span style="color:#000;font-weight:bold">;</span>
 
-/**
- * utility object used for performing search operation on the list. This object will not be exposed outside this class.
- * for a given search operation following would be values of 2 fields of this object :-
- * 1. curr - first node with equal or greater value than search keyword.
- * 2. pred - previous node of curr.
- */
-class Window {
-    public Node pred;
-    public Node curr;
+    <span style="color:#000">Window</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">Node</span> <span style="color:#000">pred</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">Node</span> <span style="color:#000">curr</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">this</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">pred</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">pred</span><span style="color:#000;font-weight:bold">;</span>
+        <span style="color:#204a87;font-weight:bold">this</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">curr</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000;font-weight:bold">}</span>
 
-    Window(Node pred, Node curr) {
-        this.pred = pred;
-        this.curr = curr;
-    }
-}
+<span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">class</span> <span style="color:#000">LinkedList</span> <span style="color:#000;font-weight:bold">{</span>
 
-public class LinkedList {
+    <span style="color:#000">Node</span> <span style="color:#000">head</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#000">Node</span> <span style="color:#000">tail</span><span style="color:#000;font-weight:bold">;</span>
 
-    Node head;
-    Node tail;
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">LinkedList</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#000">head</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">Node</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">Integer</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">MIN_VALUE</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#000">tail</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">Node</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">Integer</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">MAX_VALUE</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#000">head</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">set</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">tail</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">);</span>
+    <span style="color:#000;font-weight:bold">}</span>
 
-    public LinkedList() {
-        head = new Node(Integer.MIN_VALUE);
-        tail = new Node(Integer.MAX_VALUE);
-        head.next.set(tail, false);
-    }
+    <span style="color:#8f5902;font-style:italic">/**
+</span><span style="color:#8f5902;font-style:italic">     * Add a new element to linked list.
+</span><span style="color:#8f5902;font-style:italic">     * @param value - value to add.
+</span><span style="color:#8f5902;font-style:italic">     * @return - return false in case value is already present in list in such case insertion will be ignored. Else
+</span><span style="color:#8f5902;font-style:italic">     * return true is value was inserted.
+</span><span style="color:#8f5902;font-style:italic">     */</span>
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">boolean</span> <span style="color:#000">add</span><span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">Window</span> <span style="color:#000">window</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">find</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">value</span><span style="color:#000;font-weight:bold">);</span>
+            <span style="color:#8f5902;font-style:italic">// return false if value is already present.
+</span><span style="color:#8f5902;font-style:italic"></span>            <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">value</span> <span style="color:#ce5c00;font-weight:bold">==</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+                <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">;</span>
+            <span style="color:#000;font-weight:bold">}</span> <span style="color:#204a87;font-weight:bold">else</span> <span style="color:#000;font-weight:bold">{</span>
+                <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">Node</span> <span style="color:#000">newNode</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">Node</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">value</span><span style="color:#000;font-weight:bold">);</span>
+                <span style="color:#000">newNode</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">AtomicMarkableReference</span><span style="color:#ce5c00;font-weight:bold">&lt;&gt;</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">);</span>
 
-    /**
-     * Add a new element to linked list.
-     * @param value - value to add.
-     * @return - return false in case value is already present in list in such case insertion will be ignored. Else
-     * return true is value was inserted.
-     */
-    public boolean add(int value) {
-        while (true) {
-            final Window window = find(value);
-            // return false if value is already present.
-            if (window.curr.value == value) {
-                return false;
-            } else {
-                final Node newNode = new Node(value);
-                newNode.next = new AtomicMarkableReference&lt;&gt;(window.curr, false);
+                <span style="color:#8f5902;font-style:italic">// Try setting next node of pred using CAS operation. In case CAS operation fails we will need to find
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#8f5902;font-style:italic">// new window.
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">pred</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">compareAndSet</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">newNode</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">))</span> <span style="color:#000;font-weight:bold">{</span>
+                    <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">;</span>
+                <span style="color:#000;font-weight:bold">}</span>
+            <span style="color:#000;font-weight:bold">}</span>
+        <span style="color:#000;font-weight:bold">}</span>
+    <span style="color:#000;font-weight:bold">}</span>
 
-                // Try setting next node of pred using CAS operation. In case CAS operation fails we will need to find
-                // new window.
-                if (window.pred.next.compareAndSet(window.curr, newNode, false, false)) {
-                    return true;
-                }
-            }
-        }
-    }
+    <span style="color:#8f5902;font-style:italic">/**
+</span><span style="color:#8f5902;font-style:italic">     * Remove an element from linked list.
+</span><span style="color:#8f5902;font-style:italic">     *
+</span><span style="color:#8f5902;font-style:italic">     * @param value - value to remove.
+</span><span style="color:#8f5902;font-style:italic">     * @return - return true in case value was present in list and remove. return false in case value was not present
+</span><span style="color:#8f5902;font-style:italic">     * in list.
+</span><span style="color:#8f5902;font-style:italic">     */</span>
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">boolean</span> <span style="color:#000">remove</span><span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">Window</span> <span style="color:#000">window</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">find</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">value</span><span style="color:#000;font-weight:bold">);</span>
 
-    /**
-     * Remove an element from linked list.
-     *
-     * @param value - value to remove.
-     * @return - return true in case value was present in list and remove. return false in case value was not present
-     * in list.
-     */
-    public boolean remove(int value) {
-        while (true) {
-            final Window window = find(value);
+            <span style="color:#8f5902;font-style:italic">// in case value is not present in the list return false.
+</span><span style="color:#8f5902;font-style:italic"></span>            <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">value</span> <span style="color:#ce5c00;font-weight:bold">!=</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+                <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">;</span>
+            <span style="color:#000;font-weight:bold">}</span> <span style="color:#204a87;font-weight:bold">else</span> <span style="color:#000;font-weight:bold">{</span>
+                <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">Node</span> <span style="color:#000">next</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">getReference</span><span style="color:#000;font-weight:bold">();</span>
 
-            // in case value is not present in the list return false.
-            if (window.curr.value != value) {
-                return false;
-            } else {
-                final Node next = window.curr.next.getReference();
+                <span style="color:#8f5902;font-style:italic">// try to logically delete the node by marking delete bit to true.
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#204a87;font-weight:bold">boolean</span> <span style="color:#000">logicallyDeleted</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">attemptMark</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">next</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">);</span>
 
-                // try to logically delete the node by marking delete bit to true.
-                boolean logicallyDeleted = window.curr.next.attemptMark(next, true);
+                <span style="color:#8f5902;font-style:italic">// If logical deletion failed i.e someone already changed the next node try to search again.
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">!</span><span style="color:#000">logicallyDeleted</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+                    <span style="color:#204a87;font-weight:bold">continue</span><span style="color:#000;font-weight:bold">;</span>
+                <span style="color:#000;font-weight:bold">}</span>
 
-                // If logical deletion failed i.e someone already changed the next node try to search again.
-                if (!logicallyDeleted) {
-                    continue;
-                }
+                <span style="color:#8f5902;font-style:italic">// physically delete the node. Even if this operation fails we are okay because we are physically
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#8f5902;font-style:italic">// deleting the node during find operation anyways.
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">pred</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">compareAndSet</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">window</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">curr</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">next</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">);</span>
+                <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">;</span>
+            <span style="color:#000;font-weight:bold">}</span>
+        <span style="color:#000;font-weight:bold">}</span>
+    <span style="color:#000;font-weight:bold">}</span>
 
-                // physically delete the node. Even if this operation fails we are okay because we are physically
-                // deleting the node during find operation anyways.
-                window.pred.next.compareAndSet(window.curr, next, false, false);
-                return true;
-            }
-        }
-    }
+    <span style="color:#8f5902;font-style:italic">/**
+</span><span style="color:#8f5902;font-style:italic">     * utility method to print the list.
+</span><span style="color:#8f5902;font-style:italic">     */</span>
+    <span style="color:#204a87;font-weight:bold">public</span> <span style="color:#000">void</span> <span style="color:#000">debug</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#000">Node</span> <span style="color:#000">next</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">head</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">getReference</span><span style="color:#000;font-weight:bold">();</span>
+        <span style="color:#204a87;font-weight:bold">final</span> <span style="color:#000">StringBuilder</span> <span style="color:#000">message</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">StringBuilder</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">&#34;head -&gt; &#34;</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">next</span> <span style="color:#ce5c00;font-weight:bold">!=</span> <span style="color:#000">tail</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#000">message</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">append</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">value</span> <span style="color:#000;font-weight:bold">).</span><span style="color:#c4a000">append</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">&#34; -&gt; &#34;</span><span style="color:#000;font-weight:bold">);</span>
+            <span style="color:#000">next</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">getReference</span><span style="color:#000;font-weight:bold">();</span>
+        <span style="color:#000;font-weight:bold">}</span>
+        <span style="color:#000">System</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">out</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">println</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">message</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">append</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">&#34;tail&#34;</span><span style="color:#000;font-weight:bold">).</span><span style="color:#c4a000">toString</span><span style="color:#000;font-weight:bold">());</span>
+    <span style="color:#000;font-weight:bold">}</span>
 
-    /**
-     * utility method to print the list.
-     */
-    public void debug() {
-        Node next = head.next.getReference();
-        final StringBuilder message = new StringBuilder(&quot;head -&gt; &quot;);
-        while (next != tail) {
-            message.append(next.value ).append(&quot; -&gt; &quot;);
-            next = next.next.getReference();
-        }
-        System.out.println(message.append(&quot;tail&quot;).toString());
-    }
+    <span style="color:#8f5902;font-style:italic">/**
+</span><span style="color:#8f5902;font-style:italic">     * Method to find first node whose value is greater than or equal to value. This will return object with two
+</span><span style="color:#8f5902;font-style:italic">     * properties :-
+</span><span style="color:#8f5902;font-style:italic">     *
+</span><span style="color:#8f5902;font-style:italic">     * 1. curr - This represents first node whose value is greater than or equal to input.
+</span><span style="color:#8f5902;font-style:italic">     * 2. pred - This is previous node of curr.
+</span><span style="color:#8f5902;font-style:italic">     *
+</span><span style="color:#8f5902;font-style:italic">     * With the following definition our search operation will always return some value as out tail is initialized with
+</span><span style="color:#8f5902;font-style:italic">     * MaxInt which will be always greater than any input.
+</span><span style="color:#8f5902;font-style:italic">     *
+</span><span style="color:#8f5902;font-style:italic">     * @param value - keyword to search
+</span><span style="color:#8f5902;font-style:italic">     * @return - window object.
+</span><span style="color:#8f5902;font-style:italic">     */</span>
+    <span style="color:#204a87;font-weight:bold">private</span> <span style="color:#000">Window</span> <span style="color:#000">find</span><span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#8f5902;font-style:italic">// In case list is empty.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">head</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">getReference</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#ce5c00;font-weight:bold">==</span> <span style="color:#000">tail</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">Window</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">head</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">tail</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#000;font-weight:bold">}</span>
 
-    /**
-     * Method to find first node whose value is greater than or equal to value. This will return object with two
-     * properties :-
-     *
-     * 1. curr - This represents first node whose value is greater than or equal to input.
-     * 2. pred - This is previous node of curr.
-     *
-     * With the following definition our search operation will always return some value as out tail is initialized with
-     * MaxInt which will be always greater than any input.
-     *
-     * @param value - keyword to search
-     * @return - window object.
-     */
-    private Window find(int value) {
-        // In case list is empty.
-        if (head.next.getReference() == tail) {
-            return new Window(head, tail);
-        }
+        <span style="color:#000">Node</span> <span style="color:#000">pred</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">null</span><span style="color:#000;font-weight:bold">;</span>
+        <span style="color:#000">Node</span> <span style="color:#000">current</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">null</span><span style="color:#000;font-weight:bold">;</span>
+        <span style="color:#000">Node</span> <span style="color:#000">succ</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#204a87;font-weight:bold">null</span><span style="color:#000;font-weight:bold">;</span>
 
-        Node pred = null;
-        Node current = null;
-        Node succ = null;
+        <span style="color:#8f5902;font-style:italic">// default status of deleted bit.
+</span><span style="color:#8f5902;font-style:italic"></span>        <span style="color:#204a87;font-weight:bold">boolean</span><span style="color:#000;font-weight:bold">[]</span> <span style="color:#000">deleteBit</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">{</span><span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">};</span>
+<span style="color:#f57900">
+</span><span style="color:#f57900">        retry:</span>
+        <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+            <span style="color:#000">pred</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">head</span><span style="color:#000;font-weight:bold">;</span>
+            <span style="color:#000">current</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">pred</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">getReference</span><span style="color:#000;font-weight:bold">();</span>
 
-        // default status of deleted bit.
-        boolean[] deleteBit = {false};
+            <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+                <span style="color:#8f5902;font-style:italic">// if successor is in logical deletion deleteBit will be set to &#34;true&#34; else it will remain &#34;false&#34;.
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#000">succ</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">current</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">get</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">deleteBit</span><span style="color:#000;font-weight:bold">);</span>
 
-        retry:
-        while (true) {
-            pred = head;
-            current = pred.next.getReference();
+                <span style="color:#8f5902;font-style:italic">// if node is logically deleted we should attempt to physically delete it.
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#204a87;font-weight:bold">while</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">deleteBit</span><span style="color:#000;font-weight:bold">[</span><span style="color:#000">0</span><span style="color:#000;font-weight:bold">])</span> <span style="color:#000;font-weight:bold">{</span>
+                    <span style="color:#204a87;font-weight:bold">boolean</span> <span style="color:#000">valueChanged</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">pred</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">compareAndSet</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">current</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">succ</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">);</span>
+                    <span style="color:#8f5902;font-style:italic">// If physical deletion failed this means another operation is happening in parallel. Start the loop
+</span><span style="color:#8f5902;font-style:italic"></span>                    <span style="color:#8f5902;font-style:italic">// again.
+</span><span style="color:#8f5902;font-style:italic"></span>                    <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#ce5c00;font-weight:bold">!</span><span style="color:#000">valueChanged</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+                        <span style="color:#204a87;font-weight:bold">continue</span> <span style="color:#000">retry</span><span style="color:#000;font-weight:bold">;</span>
+                    <span style="color:#000;font-weight:bold">}</span>
 
-            while (true) {
-                // if successor is in logical deletion deleteBit will be set to &quot;true&quot; else it will remain &quot;false&quot;.
-                succ = current.next.get(deleteBit);
+                    <span style="color:#8f5902;font-style:italic">// If physical deletion was successful change to next value.
+</span><span style="color:#8f5902;font-style:italic"></span>                    <span style="color:#000">current</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">succ</span><span style="color:#000;font-weight:bold">;</span>
+                    <span style="color:#000">succ</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">current</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">next</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">get</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">deleteBit</span><span style="color:#000;font-weight:bold">);</span>
+                <span style="color:#000;font-weight:bold">}</span>
 
-                // if node is logically deleted we should attempt to physically delete it.
-                while (deleteBit[0]) {
-                    boolean valueChanged = pred.next.compareAndSet(current, succ, false, false);
-                    // If physical deletion failed this means another operation is happening in parallel. Start the loop
-                    // again.
-                    if (!valueChanged) {
-                        continue retry;
-                    }
+                <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">current</span><span style="color:#000;font-weight:bold">.</span><span style="color:#c4a000">value</span> <span style="color:#ce5c00;font-weight:bold">&gt;=</span> <span style="color:#000">value</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+                    <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#204a87;font-weight:bold">new</span> <span style="color:#000">Window</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">pred</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">current</span><span style="color:#000;font-weight:bold">);</span>
+                <span style="color:#000;font-weight:bold">}</span>
 
-                    // If physical deletion was successful change to next value.
-                    current = succ;
-                    succ = current.next.get(deleteBit);
-                }
+                <span style="color:#8f5902;font-style:italic">// search next node
+</span><span style="color:#8f5902;font-style:italic"></span>                <span style="color:#000">pred</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">current</span><span style="color:#000;font-weight:bold">;</span>
+                <span style="color:#000">current</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">succ</span><span style="color:#000;font-weight:bold">;</span>
+            <span style="color:#000;font-weight:bold">}</span>
+        <span style="color:#000;font-weight:bold">}</span>
+    <span style="color:#000;font-weight:bold">}</span>
 
-                if (current.value &gt;= value) {
-                    return new Window(pred, current);
-                }
-
-                // search next node
-                pred = current;
-                current = succ;
-            }
-        }
-    }
-
-}
-</code></pre>
-
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <p>I have tried adding as many comment as possible to make it easy to understand.</p>
 
 <h3 id="references">References</h3>
@@ -414,39 +361,12 @@ public class LinkedList {
 <li><a href="https://en.wikipedia.org/wiki/Compare-and-swap">https://en.wikipedia.org/wiki/Compare-and-swap</a></li>
 </ol>
 
-                </section>
-            </article>
+</main>
 
-            
-
-            
-
-            
-
-            <footer id="footer">
-    
-    <p class="small">
-    
-       © Copyright 2019 <i class="fa fa-heart" aria-hidden="true"></i> 
-    
-    </p>
-    <p class="small">
-        Powered by <a href="http://www.gohugo.io/">Hugo</a> Theme By <a href="https://github.com/nodejh/hugo-theme-cactus-plus">nodejh</a>
-    </p>
-</footer>
-
-        </section>
-
-        <script src="https://ananduee.github.io/js/jquery-3.3.1.min.js"></script>
-<script src="https://ananduee.github.io/js/main.js"></script>
-<script src="https://ananduee.github.io/js/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
-
-
-
-
-
-
-
-    </body>
+  <footer>
+  
+  
+  </footer>
+  </body>
 </html>
+
